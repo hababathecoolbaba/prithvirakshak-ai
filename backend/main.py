@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timezone
+from datetime import datetime, timezone
 from typing import Literal
 from uuid import uuid4
 
@@ -35,7 +35,7 @@ alerts = [
         "id": "ALT-001",
         "level": "ORANGE",
         "hazard": "Severe Thunderstorm",
-        "location": "Jaipur Prototype Zone",
+        "location": "Selected Location Prototype Zone",
         "arrival": "30-60 min",
         "confidence": "High",
         "status": "Pending Authority Review",
@@ -128,7 +128,7 @@ class IncidentCreate(BaseModel):
 
 class AssistantRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
-    location: str | None = Field(default="Jaipur", max_length=150)
+    location: str | None = Field(default="Selected Location", max_length=150)
 
 
 class IncidentAssignRequest(BaseModel):
@@ -215,7 +215,7 @@ def get_alerts():
 @app.get("/api/nowcast")
 def get_nowcast():
     return {
-        "location": "Jaipur Prototype Zone",
+        "location": "Selected Location Prototype Zone",
         "prototype": True,
         "direction": "East to North-East",
         "confidence": "High",
@@ -261,7 +261,7 @@ def get_shelters():
                 "distance_km": 1.8,
                 "status": "Demo Operational",
                 "capacity_status": "Available",
-                "location": "Jaipur Prototype Zone",
+                "location": "Selected Location Prototype Zone",
             },
             {
                 "id": "SH-002",
@@ -269,7 +269,7 @@ def get_shelters():
                 "distance_km": 3.2,
                 "status": "Demo Operational",
                 "capacity_status": "Limited",
-                "location": "Jaipur Prototype Zone",
+                "location": "Selected Location Prototype Zone",
             },
             {
                 "id": "SH-003",
@@ -277,7 +277,7 @@ def get_shelters():
                 "distance_km": 4.6,
                 "status": "Demo Verification Required",
                 "capacity_status": "Unknown",
-                "location": "Jaipur Prototype Zone",
+                "location": "Selected Location Prototype Zone",
             },
         ],
     }
@@ -560,3 +560,4 @@ def system_health():
         ],
         "timestamp": utc_now(),
     }
+

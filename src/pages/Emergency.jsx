@@ -1,76 +1,147 @@
-import { Link } from "react-router";
-import { MapPin, Navigation, Phone, Volume2 } from "lucide-react";
+import {
+  Ambulance,
+  Flame,
+  Hospital,
+  MapPin,
+  Phone,
+  Shield,
+} from "lucide-react";
+
+import { useState } from "react";
+
+import {
+  getGPSPosition,
+  mapsSearchURL,
+  openExternal,
+} from "../lib/locationLinks";
 
 export default function Emergency() {
+  const [coords, setCoords] =
+    useState(null);
+
+  const [status, setStatus] =
+    useState("");
+
+  async function enableGPS() {
+    try {
+      const position =
+        await getGPSPosition();
+
+      setCoords(position);
+
+      setStatus(
+        "Location enabled for nearby-service searches."
+      );
+    } catch (err) {
+      setStatus(err.message);
+    }
+  }
+
+  function search(query) {
+    openExternal(
+      mapsSearchURL(
+        query,
+        coords
+      )
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-14 text-white">
+    <main className="min-h-screen bg-slate-950 px-5 py-12 text-white">
       <div className="mx-auto max-w-3xl">
-        <div className="inline-flex rounded-full border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300">
-          DEMO RED ALERT
+        <div className="text-xs font-black tracking-widest text-red-500">
+          EMERGENCY ACCESS
         </div>
 
-        <h1 className="mt-6 text-4xl font-black sm:text-6xl">
-          SEVERE WEATHER WARNING
+        <h1 className="mt-3 text-5xl font-black">
+          Emergency Help
         </h1>
 
-        <div className="mt-3 text-2xl font-black text-red-300">
-          ACT NOW
-        </div>
+        <a
+          href="tel:112"
+          className="mt-8 flex items-center justify-center gap-3 rounded-2xl bg-red-600 p-6 text-2xl font-black text-white"
+        >
+          <Phone />
+          CALL 112
+        </a>
 
-        <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <div className="text-xs font-bold text-amber-300">
-            SIMULATED FOR PROTOTYPE — NOT A REAL EMERGENCY ALERT
+        <button
+          onClick={enableGPS}
+          className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-400 p-5 font-black text-slate-950"
+        >
+          <MapPin />
+          Enable Location
+        </button>
+
+        {status && (
+          <div className="mt-4 text-sm text-slate-400">
+            {status}
           </div>
+        )}
 
-          <div className="mt-7 space-y-6">
-            <Info title="WHAT?" value="Demo severe thunderstorm" />
-            <Info title="WHERE?" value="Prototype Jaipur test area" />
-            <Info title="WHEN?" value="Demo risk window: 30–60 minutes" />
-            <Info
-              title="ACTION?"
-              value="Follow official instructions and avoid exposed areas during severe weather."
-            />
-          </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <EmergencyCard
+            icon={Hospital}
+            title="Nearest Hospital"
+            onClick={() =>
+              search("hospital")
+            }
+          />
+
+          <EmergencyCard
+            icon={Shield}
+            title="Nearest Police"
+            onClick={() =>
+              search(
+                "police station"
+              )
+            }
+          />
+
+          <EmergencyCard
+            icon={Flame}
+            title="Nearest Fire Service"
+            onClick={() =>
+              search(
+                "fire station"
+              )
+            }
+          />
+
+          <EmergencyCard
+            icon={Ambulance}
+            title="Ambulance Services"
+            onClick={() =>
+              search(
+                "ambulance service"
+              )
+            }
+          />
         </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button className="flex items-center gap-3 rounded-2xl bg-cyan-400 p-5 font-bold text-slate-950">
-            <MapPin />
-            Find Shelter
-          </button>
-
-          <button className="flex items-center gap-3 rounded-2xl bg-slate-800 p-5 font-bold">
-            <Navigation />
-            Lower-Risk Route
-          </button>
-
-          <button className="flex items-center gap-3 rounded-2xl bg-slate-800 p-5 font-bold">
-            <Phone />
-            Emergency Contacts
-          </button>
-
-          <button className="flex items-center gap-3 rounded-2xl bg-slate-800 p-5 font-bold">
-            <Volume2 />
-            Listen to Instructions
-          </button>
-        </div>
-
-        <Link to="/" className="mt-8 inline-block text-sm text-slate-400">
-          ? Back
-        </Link>
       </div>
     </main>
   );
 }
 
-function Info({ title, value }) {
+function EmergencyCard({
+  icon: Icon,
+  title,
+  onClick,
+}) {
   return (
-    <div>
-      <div className="text-xs font-bold tracking-widest text-cyan-300">
+    <button
+      onClick={onClick}
+      className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left"
+    >
+      <Icon className="text-red-500" />
+
+      <div className="mt-4 font-black">
         {title}
       </div>
-      <div className="mt-1 text-lg">{value}</div>
-    </div>
+
+      <div className="mt-2 text-sm text-cyan-400">
+        Open Map
+      </div>
+    </button>
   );
 }
-

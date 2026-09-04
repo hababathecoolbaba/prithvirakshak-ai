@@ -1,106 +1,203 @@
 import { useState } from "react";
+
 import {
   Bot,
-  LoaderCircle,
   MapPin,
   Send,
-  ShieldAlert,
-  Wifi,
 } from "lucide-react";
 
 import Header from "../components/Header";
 import MobileNav from "../components/MobileNav";
 
-import { api } from "../lib/api";
-import { getWeatherByCity } from "../lib/weather";
+import {
+  getWeatherByCity,
+  getWeatherByCoords,
+} from "../lib/weather";
+
+import {
+  getGPSPosition,
+} from "../lib/locationLinks";
 
 const suggestions = [
   "What is the weather now?",
-  "Is my area at risk?",
   "Will it rain?",
   "How strong is the wind?",
-  "Explain my warning.",
-  "Find nearby shelter.",
+  "Is there a weather risk?",
+  "Find a shelter",
+  "How do I get emergency help?",
 ];
 
 export default function Assistant() {
-  const [input, setInput] = useState("");
-  const [location, setLocation] = useState("Jaipur");
-  const [loading, setLoading] = useState(false);
+  const [input, setInput] =
+    useState("");
 
-  const [messages, setMessages] = useState([
-    {
-      sender: "ai",
-      text:
-        "Hello. I am Prithvi AI. Ask me about live weather, forecast risk, preparedness and emergency resources.",
-    },
-  ]);
+  const [location, setLocation] =
+    useState("");
 
-  async function sendMessage(messageText) {
-    const message = (messageText || input).trim();
+  const [coords, setCoords] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [messages, setMessages] =
+    useState([
+      {
+        sender: "ai",
+        text:
+          "Hello. I am Prithvi AI. Select a location or enable GPS, then ask me about live weather, preparedness, shelters, routes or emergency services.",
+      },
+    ]);
+
+  async function enableGPS() {
+    try {
+      const position =
+        await getGPSPosition();
+
+      setCoords(position);
+      setLocation(
+        "Current GPS Location"
+      );
+    } catch (err) {
+      setMessages((current) => [
+        ...current,
+        {
+          sender: "ai",
+          text: err.message,
+        },
+      ]);
+    }
+  }
+
+  async function getSelectedWeather() {
+    if (coords) {
+      return getWeatherByCoords(
+        coords.latitude,
+        coords.longitude,
+        {
+          name:
+            "Current GPS Location",
+          displayName:
+            "Current GPS Location",
+        }
+      );
+    }
+
+    const city = location.trim();
+
+    if (!city) {
+      throw new Error(
+        "Choose a location or enable GPS first."
+      );
+    }
+
+    return getWeatherByCity(city);
+  }
+
+  async function sendMessage(
+    messageText
+  ) {
+    const message = (
+      messageText || input
+    ).trim();
 
     if (!message || loading) return;
 
     setMessages((current) => [
       ...current,
-      { sender: "user", text: message },
+      {
+        sender: "user",
+        text: message,
+      },
     ]);
 
     setInput("");
     setLoading(true);
 
     try {
-      const lower = message.toLowerCase();
+      const lower =
+        message.toLowerCase();
 
-      const weatherQuestion = [
+      let response = "";
+
+      const weatherWords = [
         "weather",
         "temperature",
         "rain",
         "wind",
-        "risk",
         "storm",
         "forecast",
         "humidity",
-      ].some((word) => lower.includes(word));
+        "risk",
+        "cloud",
+      ];
 
-      let responseText;
+      if (
+        weatherWords.some((word) =>
+          lower.includes(word)
+        )
+      ) {
+        const data =
+          await getSelectedWeather();
 
-      if (weatherQuestion) {
-        const weather = await getWeatherByCity(location);
-
-        responseText =
-          `${weather.location.displayName}: ` +
-          `${weather.current.condition}, ` +
-          `${weather.current.temperature_2m}°C, ` +
-          `feels like ${weather.current.apparent_temperature}°C. ` +
-          `Humidity ${weather.current.relative_humidity_2m}%. ` +
-          `Wind ${weather.current.wind_speed_10m} km/h, ` +
-          `gusts ${weather.current.wind_gusts_10m} km/h. ` +
-          `Rain chance ${weather.current.precipitationProbability ?? 0}%. ` +
-          `PRITHVIRAKSHAK forecast risk: ${weather.risk.level} - ${weather.risk.action}. ` +
-          `This is forecast information, not an official warning.`;
+        response =
+          `${data.location?.displayName || "Selected location"}: ` +
+          `${data.current.condition}. ` +
+          `Temperature ${data.current.temperature_2m}°C, ` +
+          `feels like ${data.current.apparent_temperature}°C. ` +
+          `Humidity ${data.current.relative_humidity_2m}%. ` +
+          `Wind ${data.current.wind_speed_10m} km/h ` +
+          `with gusts around ${data.current.wind_gusts_10m} km/h. ` +
+          `Rain probability is ${data.current.precipitationProbability ?? 0}%. ` +
+          `Forecast risk is ${data.risk.level} - ${data.risk.action}.`;
+      } else if (
+        lower.includes("shelter")
+      ) {
+        response =
+          "Open Find Shelter to search live nearby shelter and relief-location listings.";
+      } else if (
+        lower.includes("route") ||
+        lower.includes("direction")
+      ) {
+        response =
+          "Open Route Planner to launch live directions from your current location.";
+      } else if (
+        lower.includes("emergency") ||
+        lower.includes("help") ||
+        lower.includes("police") ||
+        lower.includes("hospital") ||
+        lower.includes("fire")
+      ) {
+        response =
+          "For emergencies in India, 112 is the nationwide emergency number. The Emergency Services page can also open nearby hospitals, police and fire services.";
+      } else if (
+        lower.includes("flood")
+      ) {
+        response =
+          "During flooding, follow local authority instructions, avoid entering floodwater and move toward a safer location if directed.";
+      } else if (
+        lower.includes("lightning")
+      ) {
+        response =
+          "During lightning, move indoors and avoid exposed outdoor areas. Follow official local weather warnings.";
       } else {
-        const data = await api.assistant(
-          message,
-          location
-        );
-
-        responseText = data.response;
+        response =
+          "I can help with live weather, forecast risk, emergency services, shelters, routes and preparedness.";
       }
 
       setMessages((current) => [
         ...current,
         {
           sender: "ai",
-          text: responseText,
+          text: response,
         },
       ]);
-    } catch (error) {
+    } catch (err) {
       setMessages((current) => [
         ...current,
         {
           sender: "ai",
-          text: `Unable to retrieve information: ${error.message}`,
+          text: err.message,
         },
       ]);
     } finally {
@@ -113,73 +210,93 @@ export default function Assistant() {
       <Header />
 
       <main className="mx-auto max-w-5xl px-5 py-10">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10">
-              <Bot size={30} className="text-cyan-300" />
-            </div>
-
-            <div>
-              <h1 className="text-4xl font-black">
-                Prithvi AI
-              </h1>
-
-              <p className="mt-1 text-sm text-slate-400">
-                Live Weather Intelligence Assistant
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10">
+            <Bot
+              size={30}
+              className="text-cyan-400"
+            />
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
-            <Wifi size={14} />
-            LIVE WEATHER CONNECTED
+          <div>
+            <h1 className="text-4xl font-black">
+              Prithvi AI
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-400">
+              Live Weather & Disaster Assistant
+            </p>
           </div>
         </div>
 
-        <div className="mt-7 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4">
-          <MapPin size={18} className="text-cyan-300" />
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4">
+            <MapPin
+              size={18}
+              className="text-cyan-400"
+            />
 
-          <input
-            value={location}
-            onChange={(event) =>
-              setLocation(event.target.value)
-            }
-            className="w-full bg-transparent py-3 outline-none"
-            placeholder="Location"
-          />
+            <input
+              value={location}
+              onChange={(event) => {
+                setLocation(
+                  event.target.value
+                );
+
+                setCoords(null);
+              }}
+              placeholder="Enter city or enable GPS"
+              className="w-full bg-transparent py-4 outline-none"
+            />
+          </div>
+
+          <button
+            onClick={enableGPS}
+            className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+          >
+            Enable GPS
+          </button>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              onClick={() => sendMessage(suggestion)}
-              className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/50"
-            >
-              {suggestion}
-            </button>
-          ))}
+          {suggestions.map(
+            (suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() =>
+                  sendMessage(
+                    suggestion
+                  )
+                }
+                className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm"
+              >
+                {suggestion}
+              </button>
+            )
+          )}
         </div>
 
         <div className="mt-7 min-h-[420px] rounded-3xl border border-slate-800 bg-slate-900/60 p-5">
           <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`max-w-[88%] rounded-2xl px-5 py-4 leading-6 ${
-                  message.sender === "user"
-                    ? "ml-auto bg-cyan-400 text-slate-950"
-                    : "bg-slate-950 text-slate-300"
-                }`}
-              >
-                {message.text}
-              </div>
-            ))}
+            {messages.map(
+              (message, index) => (
+                <div
+                  key={index}
+                  className={`max-w-[88%] rounded-2xl px-5 py-4 ${
+                    message.sender ===
+                    "user"
+                      ? "ml-auto bg-cyan-400 text-slate-950"
+                      : "bg-slate-950 text-slate-300"
+                  }`}
+                >
+                  {message.text}
+                </div>
+              )
+            )}
 
             {loading && (
-              <div className="flex items-center gap-3 text-slate-400">
-                <LoaderCircle className="animate-spin text-cyan-300" />
-                Fetching live data...
+              <div className="text-slate-400">
+                Fetching live weather...
               </div>
             )}
           </div>
@@ -192,25 +309,24 @@ export default function Assistant() {
               setInput(event.target.value)
             }
             onKeyDown={(event) => {
-              if (event.key === "Enter") {
+              if (
+                event.key === "Enter"
+              ) {
                 sendMessage();
               }
             }}
             placeholder="Ask Prithvi..."
-            className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-4 outline-none focus:border-cyan-400"
+            className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-4 outline-none"
           />
 
           <button
-            onClick={() => sendMessage()}
+            onClick={() =>
+              sendMessage()
+            }
             className="rounded-xl bg-cyan-400 px-6 text-slate-950"
           >
             <Send />
           </button>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-xs text-amber-200">
-          <ShieldAlert className="mb-2" />
-          Live forecast data does not replace official IMD or government emergency warnings.
         </div>
       </main>
 

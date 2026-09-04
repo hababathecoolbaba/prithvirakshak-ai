@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
 import {
   CloudRain,
+  MapPin,
   Search,
   Thermometer,
   Wind,
@@ -9,34 +11,68 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-import { getWeatherByCity } from "../lib/weather";
+import {
+  getWeatherByCity,
+  getWeatherByCoords,
+} from "../lib/weather";
+
+import {
+  getGPSPosition,
+} from "../lib/locationLinks";
 
 export default function Nowcast() {
-  const [query, setQuery] = useState("Jaipur");
-  const [location, setLocation] = useState("Jaipur");
-  const [weather, setWeather] = useState(null);
-  const [error, setError] = useState("");
+  const [query, setQuery] =
+    useState("");
 
-  useEffect(() => {
-    load(location);
-  }, [location]);
+  const [weather, setWeather] =
+    useState(null);
 
-  async function load(city) {
+  const [error, setError] =
+    useState("");
+
+  async function enableGPS() {
     setWeather(null);
     setError("");
 
     try {
-      setWeather(await getWeatherByCity(city));
+      const coords =
+        await getGPSPosition();
+
+      const data =
+        await getWeatherByCoords(
+          coords.latitude,
+          coords.longitude,
+          {
+            name:
+              "Current GPS Location",
+
+            displayName:
+              "Current GPS Location",
+          }
+        );
+
+      setWeather(data);
     } catch (err) {
       setError(err.message);
     }
   }
 
-  function search(event) {
+  async function search(event) {
     event.preventDefault();
 
-    if (query.trim()) {
-      setLocation(query.trim());
+    if (!query.trim()) return;
+
+    setWeather(null);
+    setError("");
+
+    try {
+      setWeather(
+        await getWeatherByCity(
+          query.trim()
+        )
+      );
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -45,7 +81,7 @@ export default function Nowcast() {
       <Header />
 
       <main className="mx-auto max-w-6xl px-5 py-12">
-        <div className="text-xs font-bold tracking-widest text-cyan-300">
+        <div className="text-xs font-bold tracking-widest text-cyan-400">
           LIVE HOURLY FORECAST
         </div>
 
@@ -53,46 +89,53 @@ export default function Nowcast() {
           Weather Timeline
         </h1>
 
-        <p className="mt-3 text-slate-400">
-          Live model forecast powered by Open-Meteo.
-        </p>
+        <button
+          onClick={enableGPS}
+          className="mt-7 flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+        >
+          <MapPin size={17} />
+          Enable GPS
+        </button>
 
         <form
           onSubmit={search}
-          className="mt-7 flex max-w-xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
+          className="mt-5 flex max-w-xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
         >
           <input
             value={query}
             onChange={(event) =>
               setQuery(event.target.value)
             }
+            placeholder="Or search a city"
             className="min-w-0 flex-1 bg-transparent px-4 py-4 outline-none"
-            placeholder="Search city"
           />
 
-          <button className="flex items-center gap-2 bg-cyan-400 px-5 font-bold text-slate-950">
-            <Search size={17} />
-            Search
+          <button className="bg-cyan-400 px-5 text-slate-950">
+            <Search />
           </button>
         </form>
 
-        {error && (
-          <div className="mt-6 text-red-300">
-            {error}
-          </div>
-        )}
+        {!weather &&
+          !error && (
+            <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-7 text-slate-400">
+              Choose a location to load the
+              hourly forecast.
+            </div>
+          )}
 
-        {!weather && !error && (
-          <div className="mt-8 text-slate-400">
-            Loading live forecast...
+        {error && (
+          <div className="mt-6 text-red-500">
+            {error}
           </div>
         )}
 
         {weather && (
           <>
             <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <div className="text-sm font-bold text-cyan-300">
-                {weather.location.displayName}
+              <div className="font-bold text-cyan-400">
+                {weather.location
+                  ?.displayName ||
+                  "Selected Location"}
               </div>
 
               <div className="mt-3 text-3xl font-black">
@@ -100,71 +143,70 @@ export default function Nowcast() {
               </div>
 
               <div className="mt-1 text-slate-400">
-                Current:{" "}
-                {weather.current.temperature_2m}°C
+                Current{" "}
+                {weather.current.temperature_2m}
+                °C
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {weather.hourly.slice(0, 12).map((hour) => (
-                <div
-                  key={hour.time}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="font-black">
-                        {new Date(
-                          hour.time
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+              {weather.hourly
+                .slice(0, 12)
+                .map((hour) => (
+                  <div
+                    key={hour.time}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="font-black">
+                          {new Date(
+                            hour.time
+                          ).toLocaleTimeString(
+                            [],
+                            {
+                              hour:
+                                "2-digit",
+                              minute:
+                                "2-digit",
+                            }
+                          )}
+                        </div>
+
+                        <div className="mt-1 text-sm text-cyan-400">
+                          {hour.condition}
+                        </div>
                       </div>
 
-                      <div className="mt-1 text-sm text-cyan-300">
-                        {hour.condition}
+                      <div className="text-2xl font-black">
+                        {hour.temperature}
+                        °C
                       </div>
                     </div>
 
-                    <div className="text-2xl font-black">
-                      {hour.temperature}°C
+                    <div className="mt-5 grid grid-cols-3 gap-3 text-xs text-slate-400">
+                      <div>
+                        <CloudRain className="mb-2 text-cyan-400" size={16} />
+                        Rain{" "}
+                        {hour.precipitationProbability}
+                        %
+                      </div>
+
+                      <div>
+                        <Wind className="mb-2 text-cyan-400" size={16} />
+                        {hour.windSpeed}
+                        {" "}km/h
+                      </div>
+
+                      <div>
+                        <Thermometer className="mb-2 text-cyan-400" size={16} />
+                        Humidity{" "}
+                        {hour.humidity}%
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-5 grid grid-cols-3 gap-3 text-xs text-slate-400">
-                    <div>
-                      <CloudRain
-                        size={16}
-                        className="mb-2 text-cyan-300"
-                      />
-                      Rain {hour.precipitationProbability}%
-                    </div>
-
-                    <div>
-                      <Wind
-                        size={16}
-                        className="mb-2 text-cyan-300"
-                      />
-                      {hour.windSpeed} km/h
-                    </div>
-
-                    <div>
-                      <Thermometer
-                        size={16}
-                        className="mb-2 text-cyan-300"
-                      />
-                      Humidity {hour.humidity}%
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
-
-            <p className="mt-6 text-xs text-slate-500">
-              This is a numerical weather forecast, not radar-based
-              official nowcasting or an official warning.
-            </p>
           </>
         )}
       </main>

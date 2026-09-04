@@ -1,191 +1,209 @@
 import { useState } from "react";
-import { Volume2 } from "lucide-react";
+
+import {
+  CloudLightning,
+  Flame,
+  Mountain,
+  Waves,
+  Wind,
+} from "lucide-react";
 
 import Header from "../components/Header";
-import MobileNav from "../components/MobileNav";
+import Footer from "../components/Footer";
 
 const guides = {
   Flood: {
-    icon: "??",
+    icon: Waves,
+
     before: [
       "Know nearby higher-ground routes.",
-      "Keep essential documents protected.",
-      "Follow verified local warnings.",
+      "Keep essential contacts accessible.",
+      "Follow official weather and local authority updates.",
     ],
+
     during: [
-      "Avoid flooded roads and underpasses.",
-      "Move away from low-lying areas when instructed.",
-      "Do not enter moving floodwater.",
+      "Avoid entering floodwater.",
+      "Stay away from flooded roads and underpasses.",
+      "Move to a safer location if authorities direct you to do so.",
     ],
+
     after: [
-      "Return only after official clearance.",
+      "Return only when authorities say conditions are safe.",
       "Avoid damaged electrical infrastructure.",
-      "Report blocked roads or hazards.",
+      "Report blocked roads or hazards through official channels.",
     ],
   },
 
   Lightning: {
-    icon: "?",
+    icon: CloudLightning,
+
     before: [
-      "Check official thunderstorm alerts.",
-      "Identify a substantial indoor shelter.",
-      "Delay exposed outdoor activities if warnings are active.",
+      "Check weather forecasts before outdoor activities.",
+      "Identify a safe indoor location.",
     ],
+
     during: [
       "Move indoors.",
       "Avoid exposed open areas.",
-      "Follow official local safety instructions.",
+      "Stay away from isolated tall objects.",
     ],
-    after: [
-      "Wait for updated official guidance.",
-      "Check for damaged infrastructure nearby.",
-      "Report serious hazards through verified channels.",
-    ],
-  },
 
-  Cyclone: {
-    icon: "???",
-    before: [
-      "Monitor official cyclone bulletins.",
-      "Know your evacuation or shelter route.",
-      "Secure essential supplies in advance.",
-    ],
-    during: [
-      "Stay in the designated safe location.",
-      "Keep away from windows.",
-      "Follow evacuation instructions immediately.",
-    ],
     after: [
-      "Avoid fallen wires and damaged structures.",
-      "Use verified routes only.",
-      "Wait for official all-clear instructions.",
+      "Continue checking official updates.",
+      "Wait until conditions improve before resuming outdoor activity.",
     ],
   },
 
   Heatwave: {
-    icon: "???",
+    icon: Flame,
+
     before: [
-      "Check heat alerts and daily advisories.",
-      "Plan outdoor activities for cooler periods.",
-      "Ensure drinking water is available.",
+      "Check heat forecasts.",
+      "Plan outdoor activity for cooler periods when possible.",
     ],
+
     during: [
-      "Reduce unnecessary exposure to extreme heat.",
-      "Rest in cooler shaded or indoor areas.",
+      "Stay hydrated.",
+      "Use shade or indoor cooling where available.",
       "Follow local public-health guidance.",
     ],
+
     after: [
-      "Continue hydration and recovery.",
-      "Check official updates for continuing heat risk.",
-      "Seek adult or medical help if someone becomes seriously unwell.",
+      "Continue hydration.",
+      "Check on family members who may need assistance.",
     ],
   },
 
   "Strong Wind": {
-    icon: "??",
+    icon: Wind,
+
     before: [
-      "Secure loose outdoor objects.",
-      "Check official wind warnings.",
-      "Avoid unnecessary travel during severe conditions.",
+      "Secure loose outdoor objects where it is safe to do so.",
+      "Check weather warnings.",
     ],
+
     during: [
-      "Stay away from trees and damaged structures.",
-      "Move indoors when instructed.",
-      "Avoid exposed roads where debris may fall.",
+      "Stay indoors when severe winds are occurring.",
+      "Keep away from damaged trees and power lines.",
     ],
+
     after: [
-      "Watch for fallen branches and wires.",
-      "Report blocked roads.",
-      "Wait for verified updates before travelling.",
+      "Avoid damaged structures.",
+      "Report fallen lines or blocked roads to authorities.",
     ],
   },
 
   Landslide: {
-    icon: "??",
+    icon: Mountain,
+
     before: [
-      "Monitor warnings in slope-prone areas.",
-      "Know alternate routes.",
-      "Report visible road or slope damage.",
+      "Follow local landslide and heavy-rain alerts.",
+      "Know evacuation routes if your area is vulnerable.",
     ],
+
     during: [
-      "Move away from affected slopes when instructed.",
-      "Avoid blocked mountain roads.",
-      "Follow evacuation guidance.",
+      "Follow evacuation instructions immediately.",
+      "Stay away from unstable slopes.",
     ],
+
     after: [
-      "Do not enter damaged areas without clearance.",
-      "Watch for secondary slope movement.",
-      "Use verified road-status information.",
+      "Return only after authorities confirm conditions are safe.",
+      "Report damaged roads and infrastructure.",
     ],
   },
 };
 
 export default function Preparedness() {
-  const [selected, setSelected] = useState("Flood");
+  const [selected, setSelected] =
+    useState("Flood");
 
   const guide = guides[selected];
 
+  const GuideIcon = guide.icon;
+
   return (
-    <div className="min-h-screen bg-slate-950 pb-24 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <Header />
 
       <main className="mx-auto max-w-6xl px-5 py-12">
-        <div className="text-sm font-bold text-cyan-300">
-          PREPAREDNESS HUB
+        <div className="text-xs font-bold tracking-widest text-cyan-400">
+          DISASTER PREPAREDNESS
         </div>
 
         <h1 className="mt-3 text-4xl font-black">
-          Prepare Before the Hazard Reaches You
+          Preparedness Guides
         </h1>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          {Object.entries(guides).map(([name, item]) => (
+        <div className="mt-7 flex flex-wrap gap-2">
+          {Object.keys(
+            guides
+          ).map((name) => (
             <button
               key={name}
-              onClick={() => setSelected(name)}
-              className={`rounded-xl border px-4 py-3 ${
+              onClick={() =>
+                setSelected(name)
+              }
+              className={`rounded-xl px-4 py-3 text-sm font-bold ${
                 selected === name
-                  ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
-                  : "border-slate-800 bg-slate-900"
+                  ? "bg-cyan-400 text-slate-950"
+                  : "border border-slate-700 bg-slate-900"
               }`}
             >
-              {item.icon} {name}
+              {name}
             </button>
           ))}
         </div>
 
-        <div className="mt-8 grid gap-5 lg:grid-cols-3">
-          <GuideCard title="BEFORE" items={guide.before} />
-          <GuideCard title="DURING" items={guide.during} />
-          <GuideCard title="AFTER" items={guide.after} />
-        </div>
+        <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-7">
+          <GuideIcon
+            size={34}
+            className="text-cyan-400"
+          />
 
-        <button className="mt-7 flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 font-bold">
-          <Volume2 size={18} />
-          Listen to Instructions
-        </button>
+          <h2 className="mt-4 text-3xl font-black">
+            {selected}
+          </h2>
 
-        <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-200">
-          Prototype preparedness content. Production guidance should use approved official disaster-management instructions.
+          <div className="mt-7 grid gap-5 lg:grid-cols-3">
+            <Section
+              title="BEFORE"
+              items={guide.before}
+            />
+
+            <Section
+              title="DURING"
+              items={guide.during}
+            />
+
+            <Section
+              title="AFTER"
+              items={guide.after}
+            />
+          </div>
         </div>
       </main>
 
-      <MobileNav />
+      <Footer />
     </div>
   );
 }
 
-function GuideCard({ title, items }) {
+function Section({
+  title,
+  items,
+}) {
   return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <div className="text-sm font-black tracking-widest text-cyan-300">
+    <div className="rounded-2xl bg-slate-950 p-5">
+      <div className="text-xs font-black text-cyan-400">
         {title}
       </div>
 
-      <ul className="mt-5 space-y-3 text-slate-300">
+      <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
         {items.map((item) => (
-          <li key={item} className="flex gap-3">
-            <span className="text-cyan-300">•</span>
+          <li
+            key={item}
+            className="border-b border-slate-800 pb-3 last:border-0"
+          >
             {item}
           </li>
         ))}
@@ -193,4 +211,3 @@ function GuideCard({ title, items }) {
     </div>
   );
 }
-

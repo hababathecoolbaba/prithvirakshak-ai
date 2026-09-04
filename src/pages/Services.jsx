@@ -1,56 +1,95 @@
+import { useState } from "react";
+
 import {
   Ambulance,
   Building2,
   Flame,
+  Hospital,
   MapPin,
   Phone,
   Shield,
 } from "lucide-react";
 
 import Header from "../components/Header";
-import MobileNav from "../components/MobileNav";
+import Footer from "../components/Footer";
+
+import {
+  getGPSPosition,
+  mapsSearchURL,
+  openExternal,
+} from "../lib/locationLinks";
 
 const services = [
   {
-    title: "Hospitals",
-    icon: Ambulance,
-    detail: "Find nearby verified medical facilities.",
+    name: "Hospitals",
+    query: "hospital",
+    icon: Hospital,
   },
+
   {
-    title: "Police",
+    name: "Police",
+    query: "police station",
     icon: Shield,
-    detail: "Access verified police-service information.",
   },
+
   {
-    title: "Fire Services",
+    name: "Fire Services",
+    query: "fire station",
     icon: Flame,
-    detail: "Locate verified fire and rescue services.",
   },
+
   {
-    title: "Disaster Response",
+    name: "Ambulance Services",
+    query: "ambulance service",
+    icon: Ambulance,
+  },
+
+  {
+    name: "Disaster Response",
+    query:
+      "disaster management office",
     icon: Building2,
-    detail: "Find designated disaster-response resources.",
-  },
-  {
-    title: "Emergency Contacts",
-    icon: Phone,
-    detail: "Display verified emergency numbers.",
-  },
-  {
-    title: "Shelters",
-    icon: MapPin,
-    detail: "Open nearby shelter information.",
   },
 ];
 
 export default function Services() {
+  const [coords, setCoords] =
+    useState(null);
+
+  const [status, setStatus] =
+    useState("");
+
+  async function enableGPS() {
+    try {
+      const location =
+        await getGPSPosition();
+
+      setCoords(location);
+
+      setStatus(
+        "Location enabled."
+      );
+    } catch (err) {
+      setStatus(err.message);
+    }
+  }
+
+  function openService(query) {
+    openExternal(
+      mapsSearchURL(
+        query,
+        coords
+      )
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 pb-24 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       <Header />
 
       <main className="mx-auto max-w-6xl px-5 py-12">
-        <div className="text-sm font-bold text-cyan-300">
-          EMERGENCY RESOURCES
+        <div className="text-xs font-bold tracking-widest text-cyan-400">
+          LIVE EMERGENCY SERVICES
         </div>
 
         <h1 className="mt-3 text-4xl font-black">
@@ -58,39 +97,64 @@ export default function Services() {
         </h1>
 
         <p className="mt-3 max-w-2xl text-slate-400">
-          Prototype service finder designed to connect citizens with verified nearby emergency resources.
+          Open nearby services using your
+          current location.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map(({ title, icon: Icon, detail }) => (
-            <div
-              key={title}
-              className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6"
-            >
-              <Icon className="text-cyan-300" />
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={enableGPS}
+            className="flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+          >
+            <MapPin size={18} />
+            Enable GPS
+          </button>
 
-              <h2 className="mt-5 text-xl font-bold">
-                {title}
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                {detail}
-              </p>
-
-              <button className="mt-5 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold">
-                View Nearby
-              </button>
-            </div>
-          ))}
+          <a
+            href="tel:112"
+            className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-black text-white"
+          >
+            <Phone size={18} />
+            Call 112
+          </a>
         </div>
 
-        <div className="mt-7 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-200">
-          Demo interface only. Do not use unverified contact or operational-status information in production.
+        {status && (
+          <div className="mt-4 text-sm text-slate-400">
+            {status}
+          </div>
+        )}
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map(
+            ({
+              name,
+              query,
+              icon: Icon,
+            }) => (
+              <button
+                key={name}
+                onClick={() =>
+                  openService(query)
+                }
+                className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-left transition hover:border-cyan-400"
+              >
+                <Icon className="text-cyan-400" />
+
+                <div className="mt-5 text-xl font-bold">
+                  {name}
+                </div>
+
+                <div className="mt-3 text-sm font-bold text-cyan-400">
+                  View Nearby
+                </div>
+              </button>
+            )
+          )}
         </div>
       </main>
 
-      <MobileNav />
+      <Footer />
     </div>
   );
 }
-

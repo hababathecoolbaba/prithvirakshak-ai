@@ -3,8 +3,6 @@
 
 :root {
   font-family: Inter, system-ui, Arial, sans-serif;
-  color: #f8fafc;
-  background: #020617;
 }
 
 * {
@@ -19,7 +17,6 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #020617;
 }
 
 button,
@@ -32,6 +29,197 @@ select {
 button {
   cursor: pointer;
 }
+
+/* ---------------- LIGHT DEFAULT ---------------- */
+
+[data-theme="light"] body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+[data-theme="light"] [class*="bg-slate-950"] {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] [class*="bg-slate-800"] {
+  background-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] [class*="border-slate-800"],
+[data-theme="light"] [class*="border-slate-700"] {
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] [class*="text-white"] {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] [class*="text-slate-300"] {
+  color: #334155 !important;
+}
+
+[data-theme="light"] [class*="text-slate-400"] {
+  color: #475569 !important;
+}
+
+[data-theme="light"] [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+
+/* Keep cyan controls readable */
+[data-theme="light"] .bg-cyan-400 {
+  background-color: #22d3ee !important;
+}
+
+[data-theme="light"] .text-slate-950 {
+  color: #020617 !important;
+}
+
+/* ---------------- DARK ---------------- */
+
+[data-theme="dark"] body {
+  background: #020617;
+  color: #f8fafc;
+}
+
+/* ---------------- OCEAN ---------------- */
+
+[data-theme="ocean"] body {
+  background: #ecfeff;
+  color: #083344;
+}
+
+[data-theme="ocean"] [class*="bg-slate-950"] {
+  background-color: #ecfeff !important;
+}
+
+[data-theme="ocean"] [class*="bg-slate-900"] {
+  background-color: #cffafe !important;
+}
+
+[data-theme="ocean"] [class*="bg-slate-800"] {
+  background-color: #a5f3fc !important;
+}
+
+[data-theme="ocean"] [class*="text-white"] {
+  color: #083344 !important;
+}
+
+[data-theme="ocean"] [class*="text-slate-300"],
+[data-theme="ocean"] [class*="text-slate-400"] {
+  color: #155e75 !important;
+}
+
+[data-theme="ocean"] [class*="border-slate"] {
+  border-color: #67e8f9 !important;
+}
+
+/* ---------------- FOREST ---------------- */
+
+[data-theme="forest"] body {
+  background: #f0fdf4;
+  color: #052e16;
+}
+
+[data-theme="forest"] [class*="bg-slate-950"] {
+  background-color: #f0fdf4 !important;
+}
+
+[data-theme="forest"] [class*="bg-slate-900"] {
+  background-color: #dcfce7 !important;
+}
+
+[data-theme="forest"] [class*="bg-slate-800"] {
+  background-color: #bbf7d0 !important;
+}
+
+[data-theme="forest"] [class*="text-white"] {
+  color: #052e16 !important;
+}
+
+[data-theme="forest"] [class*="text-slate-300"],
+[data-theme="forest"] [class*="text-slate-400"] {
+  color: #166534 !important;
+}
+
+[data-theme="forest"] [class*="border-slate"] {
+  border-color: #86efac !important;
+}
+
+/* ---------------- BACKGROUND GRID ---------------- */
+
+.grid-background {
+  background-image:
+    linear-gradient(
+      rgba(34, 211, 238, 0.04) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.04) 1px,
+      transparent 1px
+    );
+
+  background-size: 42px 42px;
+}
+
+/* ---------------- RADAR ---------------- */
+
+.radar {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.12);
+}
+
+.radar::before {
+  content: "";
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.1);
+}
+
+.radar::after {
+  content: "";
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.1);
+}
+
+.radar-sweep {
+  position: absolute;
+  width: 290px;
+  height: 290px;
+  transform-origin: bottom right;
+
+  background:
+    linear-gradient(
+      45deg,
+      transparent 45%,
+      rgba(34, 211, 238, 0.16)
+    );
+
+  animation: sweep 7s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------- ACCESSIBILITY ---------------- */
 
 body.large-text {
   font-size: 18px;
@@ -48,4 +236,3 @@ body.reduce-motion *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
 }
-

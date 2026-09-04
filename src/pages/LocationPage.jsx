@@ -1,49 +1,35 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
-  Clock,
-  Hospital,
-  LoaderCircle,
+  CloudRain,
+  Droplets,
   MapPin,
   Navigation,
   Shield,
-  Wifi,
+  Thermometer,
+  Wind,
 } from "lucide-react";
 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import ExplainableAI from "../components/ExplainableAI";
-import ImpactIntelligence from "../components/ImpactIntelligence";
-import { api } from "../lib/api";
+
+import { getWeatherByCity } from "../lib/weather";
 
 export default function LocationPage() {
-  const params = useParams();
+  const { location = "Jaipur" } = useParams();
 
-  const locationName = decodeURIComponent(
-    params.location || "Jaipur"
-  );
+  const locationName = decodeURIComponent(location);
 
-  const [risk, setRisk] = useState(null);
+  const [weather, setWeather] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let active = true;
-
-    setRisk(null);
+    setWeather(null);
     setError("");
 
-    api
-      .risk(locationName)
-      .then((data) => {
-        if (active) setRisk(data);
-      })
-      .catch((err) => {
-        if (active) setError(err.message);
-      });
-
-    return () => {
-      active = false;
-    };
+    getWeatherByCity(locationName)
+      .then(setWeather)
+      .catch((err) => setError(err.message));
   }, [locationName]);
 
   return (
@@ -51,153 +37,213 @@ export default function LocationPage() {
       <Header />
 
       <main className="mx-auto max-w-[1400px] px-5 py-12 lg:px-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-200">
-            SIMULATED LOCATION INTELLIGENCE
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
-            <Wifi size={13} />
-            API DATA
-          </div>
+        <div className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+          LIVE · OPEN-METEO
         </div>
 
         {error && (
           <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">
-            Backend error: {error}
+            {error}
           </div>
         )}
 
-        {!risk && !error && (
-          <div className="mt-10 flex items-center gap-3 text-slate-400">
-            <LoaderCircle className="animate-spin text-cyan-300" />
-            Loading hyper-local risk...
+        {!weather && !error && (
+          <div className="mt-8 text-slate-400">
+            Loading live weather...
           </div>
         )}
 
-        {risk && (
+        {weather && (
           <>
             <div className="mt-6 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
               <div>
                 <div className="flex items-center gap-2 text-cyan-300">
                   <MapPin size={19} />
-
-                  <span className="text-sm font-bold">
-                    HYPER-LOCAL LOCATION
-                  </span>
+                  LIVE WEATHER
                 </div>
 
                 <h1 className="mt-3 text-4xl font-black sm:text-5xl">
-                  {risk.location}
+                  {weather.location.displayName}
                 </h1>
 
-                <p className="mt-3 max-w-2xl text-slate-400">
-                  {risk.what}
+                <p className="mt-3 text-xl text-slate-300">
+                  {weather.current.condition}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-orange-400/30 bg-orange-400/10 px-6 py-4">
-                <div className="text-xs font-bold tracking-widest text-orange-300">
-                  CURRENT RISK
+              <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-6 py-4">
+                <div className="text-5xl font-black">
+                  {Math.round(
+                    weather.current.temperature_2m
+                  )}
+                  °C
                 </div>
 
-                <div className="mt-1 text-3xl font-black text-orange-300">
-                  {risk.risk_level}
-                </div>
-
-                <div className="mt-1 text-sm font-bold">
-                  {risk.action_level}
+                <div className="mt-2 text-sm text-slate-300">
+                  Feels like{" "}
+                  {Math.round(
+                    weather.current.apparent_temperature
+                  )}
+                  °C
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 grid gap-5 lg:grid-cols-4">
-              <InfoCard
-                title="WHAT"
-                value={risk.hazard}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Metric
+                icon={Droplets}
+                title="Humidity"
+                value={`${weather.current.relative_humidity_2m}%`}
               />
 
-              <InfoCard
-                title="WHERE"
-                value={risk.where}
+              <Metric
+                icon={CloudRain}
+                title="Rain Chance"
+                value={
+                  weather.current.precipitationProbability !=
+                  null
+                    ? `${weather.current.precipitationProbability}%`
+                    : "N/A"
+                }
               />
 
-              <InfoCard
-                title="WHEN"
-                value={risk.when}
+              <Metric
+                icon={Wind}
+                title="Wind"
+                value={`${weather.current.wind_speed_10m} km/h`}
               />
 
-              <InfoCard
-                title="CONFIDENCE"
-                value={risk.confidence}
+              <Metric
+                icon={Wind}
+                title="Wind Gust"
+                value={`${weather.current.wind_gusts_10m} km/h`}
               />
             </div>
 
-            <div className="mt-6 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6">
-              <div className="text-xs font-bold tracking-widest text-cyan-300">
-                ACTION
-              </div>
+            <section className="mt-10">
+              <h2 className="text-3xl font-black">
+                Next 24 Hours
+              </h2>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {risk.action.map((item) => (
+              <div className="mt-5 overflow-x-auto rounded-3xl border border-slate-800">
+                <div className="min-w-[850px]">
+                  {weather.hourly.map((hour) => (
+                    <div
+                      key={hour.time}
+                      className="grid grid-cols-[160px_1fr_120px_120px_120px] border-b border-slate-800 bg-slate-900/60 px-5 py-4 text-sm last:border-b-0"
+                    >
+                      <div className="font-bold">
+                        {new Date(
+                          hour.time
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+
+                      <div className="text-slate-300">
+                        {hour.condition}
+                      </div>
+
+                      <div>
+                        {hour.temperature}°C
+                      </div>
+
+                      <div>
+                        Rain {hour.precipitationProbability}%
+                      </div>
+
+                      <div>
+                        Gust {hour.windGusts} km/h
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-10">
+              <h2 className="text-3xl font-black">
+                7-Day Forecast
+              </h2>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+                {weather.daily.map((day) => (
                   <div
-                    key={item}
-                    className="rounded-xl bg-slate-950 p-4 text-sm text-slate-300"
+                    key={day.time}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
                   >
-                    {item}
+                    <div className="text-sm font-bold">
+                      {new Date(
+                        `${day.time}T12:00:00`
+                      ).toLocaleDateString([], {
+                        weekday: "short",
+                      })}
+                    </div>
+
+                    <div className="mt-3 text-sm text-cyan-300">
+                      {day.condition}
+                    </div>
+
+                    <div className="mt-4 text-xl font-black">
+                      {Math.round(day.maxTemperature)}°
+                    </div>
+
+                    <div className="text-sm text-slate-500">
+                      {Math.round(day.minTemperature)}°
+                    </div>
+
+                    <div className="mt-4 text-xs text-slate-400">
+                      Rain {day.precipitationProbability}%
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-2">
-              <ExplainableAI
-                reasons={risk.why}
-                confidence={risk.confidence}
-              />
-
-              <ImpactIntelligence
-                impacts={risk.possible_impacts}
-              />
-            </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-3">
-              <ActionCard
-                icon={Shield}
-                title="Nearby Shelters"
-                text="View nearby prototype shelter information."
-                path="/shelters"
-              />
-
-              <ActionCard
-                icon={Hospital}
-                title="Emergency Services"
-                text="Open hospitals and emergency-resource interface."
-                path="/services"
-              />
-
-              <ActionCard
-                icon={Navigation}
-                title="Lower-Risk Route"
-                text="Compare prototype routes against hazard zones."
-                path="/safe-route"
-              />
-            </div>
-
-            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <div className="flex items-center gap-3">
-                <Clock className="text-cyan-300" />
-
-                <div>
-                  <div className="font-bold">
-                    Data Freshness
-                  </div>
-
-                  <div className="mt-1 text-sm text-slate-400">
-                    Backend update: {risk.updated_at}
-                  </div>
-                </div>
+            <section className="mt-10 rounded-3xl border border-slate-800 bg-slate-900/70 p-7">
+              <div className="text-xs font-bold tracking-widest text-cyan-300">
+                PRITHVIRAKSHAK RISK INDICATOR
               </div>
+
+              <div className="mt-3 text-3xl font-black">
+                {weather.risk.level} ·{" "}
+                {weather.risk.action}
+              </div>
+
+              <div className="mt-5 space-y-2">
+                {weather.risk.factors.map((factor) => (
+                  <div
+                    key={factor}
+                    className="rounded-xl bg-slate-950 p-4 text-sm text-slate-300"
+                  >
+                    {factor}
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-5 text-xs text-amber-300">
+                This is a forecast-based prototype risk indicator,
+                not an official IMD or government warning.
+              </p>
+            </section>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <Link
+                to="/safe-route"
+                className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
+              >
+                <Navigation className="text-cyan-300" />
+                Lower-Risk Route
+              </Link>
+
+              <Link
+                to="/shelters"
+                className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
+              >
+                <Shield className="text-cyan-300" />
+                Nearby Shelters
+              </Link>
             </div>
           </>
         )}
@@ -208,36 +254,18 @@ export default function LocationPage() {
   );
 }
 
-function InfoCard({ title, value }) {
+function Metric({ icon: Icon, title, value }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-      <div className="text-xs font-bold text-slate-500">
+      <Icon className="text-cyan-300" />
+
+      <div className="mt-4 text-xs text-slate-500">
         {title}
       </div>
 
-      <div className="mt-2 font-black">
+      <div className="mt-1 text-xl font-black">
         {value}
       </div>
     </div>
   );
 }
-
-function ActionCard({ icon: Icon, title, text, path }) {
-  return (
-    <Link
-      to={path}
-      className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-cyan-400/40"
-    >
-      <Icon className="text-cyan-300" />
-
-      <div className="mt-4 text-lg font-bold">
-        {title}
-      </div>
-
-      <div className="mt-2 text-sm leading-6 text-slate-400">
-        {text}
-      </div>
-    </Link>
-  );
-}
-

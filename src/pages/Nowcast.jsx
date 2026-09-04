@@ -1,126 +1,175 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  CloudRain,
+  Search,
+  Thermometer,
+  Wind,
+} from "lucide-react";
 
 import Header from "../components/Header";
-import FloatingAssistant from "../components/FloatingAssistant";
+import Footer from "../components/Footer";
 
-const timeline = [
-  {
-    time: "NOW",
-    severity: "ORANGE",
-    arrival: "Current",
-    confidence: "High",
-    message: "Demo storm cell detected west of Jaipur",
-  },
-  {
-    time: "+15 MIN",
-    severity: "ORANGE",
-    arrival: "15 min",
-    confidence: "High",
-    message: "Projected movement toward eastern localities",
-  },
-  {
-    time: "+30 MIN",
-    severity: "RED",
-    arrival: "30 min",
-    confidence: "Medium",
-    message: "Highest simulated severe-weather impact",
-  },
-  {
-    time: "+60 MIN",
-    severity: "ORANGE",
-    arrival: "60 min",
-    confidence: "Medium",
-    message: "Storm system continuing eastward",
-  },
-  {
-    time: "+120 MIN",
-    severity: "YELLOW",
-    arrival: "120 min",
-    confidence: "Low",
-    message: "Simulated hazard intensity decreasing",
-  },
-];
+import { getWeatherByCity } from "../lib/weather";
 
 export default function Nowcast() {
-  const [selected, setSelected] = useState(0);
-  const item = timeline[selected];
+  const [query, setQuery] = useState("Jaipur");
+  const [location, setLocation] = useState("Jaipur");
+  const [weather, setWeather] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    load(location);
+  }, [location]);
+
+  async function load(city) {
+    setWeather(null);
+    setError("");
+
+    try {
+      setWeather(await getWeatherByCity(city));
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function search(event) {
+    event.preventDefault();
+
+    if (query.trim()) {
+      setLocation(query.trim());
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <Header />
 
       <main className="mx-auto max-w-6xl px-5 py-12">
-        <div className="inline-block rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-300">
-          SIMULATED NOWCAST
+        <div className="text-xs font-bold tracking-widest text-cyan-300">
+          LIVE HOURLY FORECAST
         </div>
 
-        <h1 className="mt-5 text-4xl font-black">
-          Hyper-Local Weather Nowcast
+        <h1 className="mt-3 text-4xl font-black">
+          Weather Timeline
         </h1>
 
         <p className="mt-3 text-slate-400">
-          Explore the simulated risk evolution over the next 120 minutes.
+          Live model forecast powered by Open-Meteo.
         </p>
 
-        <div className="mt-9 grid grid-cols-5 gap-2">
-          {timeline.map((entry, index) => (
-            <button
-              key={entry.time}
-              onClick={() => setSelected(index)}
-              className={`rounded-xl px-3 py-4 text-xs font-black sm:text-sm ${
-                selected === index
-                  ? "bg-cyan-400 text-slate-950"
-                  : "border border-slate-800 bg-slate-900 text-slate-300"
-              }`}
-            >
-              {entry.time}
-            </button>
-          ))}
-        </div>
+        <form
+          onSubmit={search}
+          className="mt-7 flex max-w-xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
+        >
+          <input
+            value={query}
+            onChange={(event) =>
+              setQuery(event.target.value)
+            }
+            className="min-w-0 flex-1 bg-transparent px-4 py-4 outline-none"
+            placeholder="Search city"
+          />
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-            <div className="text-xs font-bold tracking-widest text-cyan-300">
-              PROJECTED CONDITION
-            </div>
+          <button className="flex items-center gap-2 bg-cyan-400 px-5 font-bold text-slate-950">
+            <Search size={17} />
+            Search
+          </button>
+        </form>
 
-            <h2 className="mt-4 text-3xl font-black">
-              {item.message}
-            </h2>
+        {error && (
+          <div className="mt-6 text-red-300">
+            {error}
+          </div>
+        )}
 
-            <div className="mt-8 h-56 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
-              <div className="relative flex h-full items-center justify-center">
-                <div className="absolute h-48 w-48 rounded-full border border-cyan-400/20" />
-                <div className="absolute h-32 w-32 rounded-full border border-cyan-400/20" />
-                <div className="h-20 w-20 animate-pulse rounded-full bg-orange-400/20 ring-2 ring-orange-400/50" />
+        {!weather && !error && (
+          <div className="mt-8 text-slate-400">
+            Loading live forecast...
+          </div>
+        )}
+
+        {weather && (
+          <>
+            <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+              <div className="text-sm font-bold text-cyan-300">
+                {weather.location.displayName}
+              </div>
+
+              <div className="mt-3 text-3xl font-black">
+                {weather.current.condition}
+              </div>
+
+              <div className="mt-1 text-slate-400">
+                Current:{" "}
+                {weather.current.temperature_2m}°C
               </div>
             </div>
-          </div>
 
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-7">
-            <Info title="Severity" value={item.severity} />
-            <Info title="Expected Arrival" value={item.arrival} />
-            <Info title="Confidence" value={item.confidence} />
-            <Info title="Storm Direction" value="East / North-East · Demo" />
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {weather.hourly.slice(0, 12).map((hour) => (
+                <div
+                  key={hour.time}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-black">
+                        {new Date(
+                          hour.time
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
 
-            <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-200">
-              Forecast values shown here are simulated for the prototype.
+                      <div className="mt-1 text-sm text-cyan-300">
+                        {hour.condition}
+                      </div>
+                    </div>
+
+                    <div className="text-2xl font-black">
+                      {hour.temperature}°C
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-3 gap-3 text-xs text-slate-400">
+                    <div>
+                      <CloudRain
+                        size={16}
+                        className="mb-2 text-cyan-300"
+                      />
+                      Rain {hour.precipitationProbability}%
+                    </div>
+
+                    <div>
+                      <Wind
+                        size={16}
+                        className="mb-2 text-cyan-300"
+                      />
+                      {hour.windSpeed} km/h
+                    </div>
+
+                    <div>
+                      <Thermometer
+                        size={16}
+                        className="mb-2 text-cyan-300"
+                      />
+                      Humidity {hour.humidity}%
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
+
+            <p className="mt-6 text-xs text-slate-500">
+              This is a numerical weather forecast, not radar-based
+              official nowcasting or an official warning.
+            </p>
+          </>
+        )}
       </main>
 
-      <FloatingAssistant />
+      <Footer />
     </div>
   );
 }
-
-function Info({ title, value }) {
-  return (
-    <div className="border-b border-slate-800 py-4">
-      <div className="text-xs text-slate-500">{title}</div>
-      <div className="mt-1 font-bold">{value}</div>
-    </div>
-  );
-}
-

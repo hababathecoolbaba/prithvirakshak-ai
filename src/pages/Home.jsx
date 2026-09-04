@@ -1,89 +1,110 @@
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import {
-  AlertTriangle,
   Bot,
-  CloudFog,
+  Cloud,
   CloudLightning,
   CloudRain,
-  Flame,
-  Hospital,
+  Droplets,
+  Gauge,
   Map,
   MapPin,
   Navigation,
   Radio,
+  Search,
   Shield,
   Siren,
-  Waves,
+  Thermometer,
   Wind,
 } from "lucide-react";
 
 import Header from "../components/Header";
 import FloatingAssistant from "../components/FloatingAssistant";
+import Footer from "../components/Footer";
 
-const threats = [
-  {
-    name: "Rainfall",
-    level: "High",
-    icon: CloudRain,
-  },
-  {
-    name: "Lightning",
-    level: "Severe",
-    icon: CloudLightning,
-  },
-  {
-    name: "Wind",
-    level: "Medium",
-    icon: Wind,
-  },
-  {
-    name: "Flood Risk",
-    level: "Medium",
-    icon: Waves,
-  },
-  {
-    name: "Heat",
-    level: "Low",
-    icon: Flame,
-  },
-  {
-    name: "Fog",
-    level: "Low",
-    icon: CloudFog,
-  },
-];
+import {
+  getWeatherByCity,
+  getWeatherByCoords,
+} from "../lib/weather";
 
 const shortcuts = [
+  ["Live Forecast", "/nowcast", Radio],
+  ["Weather Risk", "/alerts", Siren],
   ["Live Risk Map", "/map", Map],
-  ["Weather Nowcast", "/nowcast", Radio],
-  ["Active Alerts", "/alerts", Siren],
   ["Lower-Risk Route", "/safe-route", Navigation],
   ["Find Shelter", "/shelters", Shield],
-  ["Emergency Services", "/services", Hospital],
-  ["Report Incident", "/report", MapPin],
   ["Ask Prithvi AI", "/assistant", Bot],
 ];
 
 export default function Home() {
-  function useLocation() {
+  const navigate = useNavigate();
+
+  const [query, setQuery] = useState("Jaipur");
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadCity("Jaipur");
+  }, []);
+
+  async function loadCity(city) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await getWeatherByCity(city);
+      setWeather(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function search(event) {
+    event.preventDefault();
+
+    const city = query.trim();
+
+    if (!city) return;
+
+    navigate(`/location/${encodeURIComponent(city)}`);
+  }
+
+  function useMyLocation() {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by this browser.");
+      setError("Location is not supported by this browser.");
       return;
     }
 
+    setLoading(true);
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        alert(
-          `Location permission granted.\nLatitude: ${position.coords.latitude.toFixed(
-            4
-          )}\nLongitude: ${position.coords.longitude.toFixed(4)}`
-        );
+      async (position) => {
+        try {
+          const data = await getWeatherByCoords(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+
+          setWeather(data);
+          setError("");
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
       },
       () => {
-        alert("Location permission was not granted.");
+        setError("Location permission was not granted.");
+        setLoading(false);
       }
     );
   }
+
+  const current = weather?.current;
+  const risk = weather?.risk;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -93,146 +114,236 @@ export default function Home() {
         <section className="grid-background border-b border-slate-800">
           <div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-14 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:py-20">
             <div className="flex flex-col justify-center">
-              <div className="w-fit rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold text-amber-300">
-                SIMULATED FOR PROTOTYPE
+              <div className="w-fit rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+                LIVE WEATHER · OPEN-METEO
               </div>
 
               <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                Know What's Coming
+                Live Hyper-Local
                 <span className="text-cyan-300">
-                  {" "}Before It Reaches You.
+                  {" "}Weather Intelligence.
                 </span>
               </h1>
 
               <p className="mt-5 max-w-2xl text-slate-400 sm:text-lg">
-                AI-powered hyper-local severe-weather intelligence for faster
-                warnings and smarter disaster response.
+                Current conditions and forecast data for locations worldwide.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <button
-                  onClick={useLocation}
+                  onClick={useMyLocation}
                   className="flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
                 >
                   <MapPin size={18} />
-                  Check My Area
+                  Use My Location
                 </button>
 
                 <Link
-                  to="/map"
+                  to="/nowcast"
                   className="rounded-xl border border-slate-700 px-5 py-3 font-semibold"
                 >
-                  Open Live Map
-                </Link>
-
-                <Link
-                  to="/alerts"
-                  className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-5 py-3 font-semibold text-orange-300"
-                >
-                  Active Warnings
+                  Hourly Forecast
                 </Link>
               </div>
 
-              <div className="mt-7 flex max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+              <form
+                onSubmit={search}
+                className="mt-7 flex max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
+              >
                 <input
-                  placeholder="Enter city, district, village or PIN code"
+                  value={query}
+                  onChange={(event) =>
+                    setQuery(event.target.value)
+                  }
+                  placeholder="Enter city or place"
                   className="min-w-0 flex-1 bg-transparent px-4 py-4 outline-none"
                 />
 
-                <button className="bg-slate-800 px-5 font-semibold text-cyan-300">
+                <button className="flex items-center gap-2 bg-slate-800 px-5 font-semibold text-cyan-300">
+                  <Search size={17} />
                   Search
                 </button>
-              </div>
+              </form>
+
+              {error && (
+                <div className="mt-4 text-sm text-red-300">
+                  {error}
+                </div>
+              )}
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/75 p-7">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs tracking-widest text-slate-500">
-                    CURRENT LOCATION
+              {loading && (
+                <div className="text-slate-400">
+                  Loading live weather...
+                </div>
+              )}
+
+              {weather && !loading && (
+                <>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-xs tracking-widest text-slate-500">
+                        LIVE LOCATION
+                      </div>
+
+                      <div className="mt-2 text-xl font-bold">
+                        {weather.location.displayName ||
+                          weather.location.name}
+                      </div>
+                    </div>
+
+                    <div className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-black text-cyan-300">
+                      LIVE
+                    </div>
                   </div>
 
-                  <div className="mt-2 text-xl font-bold">
-                    Jaipur, Rajasthan
+                  <div className="my-7 border-y border-slate-800 py-7">
+                    <div className="text-5xl font-black">
+                      {Math.round(current.temperature_2m)}°C
+                    </div>
+
+                    <div className="mt-2 text-xl font-bold">
+                      {current.condition}
+                    </div>
+
+                    <div className="mt-2 text-sm text-slate-400">
+                      Feels like{" "}
+                      {Math.round(
+                        current.apparent_temperature
+                      )}
+                      °C
+                    </div>
                   </div>
-                </div>
 
-                <div className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs font-black text-orange-300">
-                  ORANGE
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <Info
+                      title="Humidity"
+                      value={`${current.relative_humidity_2m}%`}
+                    />
 
-              <div className="my-7 border-y border-slate-800 py-7">
-                <div className="text-xs tracking-widest text-slate-500">
-                  YOUR CURRENT RISK
-                </div>
+                    <Info
+                      title="Rain"
+                      value={`${current.rain} mm`}
+                    />
 
-                <div className="mt-3 text-4xl font-black text-orange-300">
-                  ORANGE
-                </div>
+                    <Info
+                      title="Wind"
+                      value={`${Math.round(
+                        current.wind_speed_10m
+                      )} km/h`}
+                    />
 
-                <div className="mt-1 font-bold">
-                  BE PREPARED
-                </div>
+                    <Info
+                      title="Wind Gust"
+                      value={`${Math.round(
+                        current.wind_gusts_10m
+                      )} km/h`}
+                    />
 
-                <div className="mt-4 text-lg">
-                  Severe Thunderstorm
-                </div>
-              </div>
+                    <Info
+                      title="Cloud Cover"
+                      value={`${current.cloud_cover}%`}
+                    />
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <Info title="Expected" value="Demo 30-60 min" />
-                <Info title="Confidence" value="High" />
-                <Info title="Source" value="Prototype Simulation" />
-                <Info title="AI Status" value="Demo Analysis" />
-              </div>
+                    <Info
+                      title="Pressure"
+                      value={`${Math.round(
+                        current.pressure_msl
+                      )} hPa`}
+                    />
+                  </div>
 
-              <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-200">
-                DEMO DATA - not a real-world weather warning.
-              </div>
+                  <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950 p-4">
+                    <div className="text-xs text-slate-500">
+                      PRITHVIRAKSHAK FORECAST RISK
+                    </div>
+
+                    <div className="mt-1 text-xl font-black text-cyan-300">
+                      {risk.level} · {risk.action}
+                    </div>
+
+                    <div className="mt-2 text-xs text-slate-500">
+                      Forecast-based prototype indicator, not an official warning.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1500px] px-5 py-14 lg:px-8">
-          <div className="text-sm font-bold text-cyan-300">
-            HYPER-LOCAL INTELLIGENCE
-          </div>
+        {weather && (
+          <section className="mx-auto max-w-[1500px] px-5 py-14 lg:px-8">
+            <div className="text-sm font-bold text-cyan-300">
+              LIVE WEATHER
+            </div>
 
-          <h2 className="mt-2 text-3xl font-black">
-            Weather Threat Summary
-          </h2>
+            <h2 className="mt-2 text-3xl font-black">
+              Current Conditions
+            </h2>
 
-          <div className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            {threats.map(({ name, level, icon: Icon }) => (
-              <div
-                key={name}
-                className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5"
-              >
-                <Icon
-                  size={31}
-                  strokeWidth={1.8}
-                  className="text-cyan-300"
-                />
+            <div className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <WeatherCard
+                icon={Thermometer}
+                name="Temperature"
+                value={`${current.temperature_2m}°C`}
+              />
 
-                <div className="mt-5 font-bold">
-                  {name}
-                </div>
+              <WeatherCard
+                icon={Droplets}
+                name="Humidity"
+                value={`${current.relative_humidity_2m}%`}
+              />
 
-                <div className="mt-1 text-sm text-slate-400">
-                  {level}
-                </div>
+              <WeatherCard
+                icon={CloudRain}
+                name="Rain Chance"
+                value={
+                  current.precipitationProbability != null
+                    ? `${current.precipitationProbability}%`
+                    : "N/A"
+                }
+              />
+
+              <WeatherCard
+                icon={Wind}
+                name="Wind"
+                value={`${current.wind_speed_10m} km/h`}
+              />
+
+              <WeatherCard
+                icon={Cloud}
+                name="Cloud Cover"
+                value={`${current.cloud_cover}%`}
+              />
+
+              <WeatherCard
+                icon={Gauge}
+                name="Visibility"
+                value={
+                  current.visibilityKm != null
+                    ? `${current.visibilityKm.toFixed(1)} km`
+                    : "N/A"
+                }
+              />
+            </div>
+
+            {risk.thunderstorm && (
+              <div className="mt-5 flex items-center gap-3 rounded-xl border border-orange-400/30 bg-orange-400/10 p-4 text-orange-200">
+                <CloudLightning />
+                Thunderstorm conditions appear in the forecast.
               </div>
-            ))}
-          </div>
-        </section>
+            )}
+          </section>
+        )}
 
         <section className="mx-auto max-w-[1500px] px-5 pb-20 lg:px-8">
           <h2 className="text-3xl font-black">
             Disaster Intelligence
           </h2>
 
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {shortcuts.map(([name, path, Icon]) => (
               <Link
                 key={path}
@@ -250,7 +361,24 @@ export default function Home() {
         </section>
       </main>
 
+      <Footer />
       <FloatingAssistant />
+    </div>
+  );
+}
+
+function WeatherCard({ icon: Icon, name, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <Icon size={29} className="text-cyan-300" />
+
+      <div className="mt-5 font-bold">
+        {name}
+      </div>
+
+      <div className="mt-1 text-sm text-slate-400">
+        {value}
+      </div>
     </div>
   );
 }
@@ -268,4 +396,3 @@ function Info({ title, value }) {
     </div>
   );
 }
-

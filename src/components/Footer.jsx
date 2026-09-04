@@ -4,9 +4,9 @@ const sections = [
   {
     title: "Weather",
     links: [
+      ["Live Forecast", "/nowcast"],
+      ["Weather Risk", "/alerts"],
       ["Live Map", "/map"],
-      ["Nowcast", "/nowcast"],
-      ["Warnings", "/alerts"],
     ],
   },
   {
@@ -23,7 +23,6 @@ const sections = [
       ["About", "/about"],
       ["Data Sources", "/sources"],
       ["Prithvi AI", "/assistant"],
-      ["Lite Mode", "/lite"],
     ],
   },
 ];
@@ -38,22 +37,26 @@ export default function Footer() {
               PRITHVIRAKSHAK AI
             </div>
 
-            <div className="mt-1 text-sm text-cyan-300">
-              Ministry of Earth Sciences
-            </div>
-
             <p className="mt-5 max-w-lg text-sm leading-6 text-slate-500">
-              Hyper-local disaster intelligence prototype designed to transform
-              verified weather information into local risk, expected impact
-              and recommended action.
+              Hyper-local weather and disaster intelligence platform.
             </p>
 
-            <div className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-200">
-              Prototype platform. Simulated information is not an official warning.
+            <div className="mt-5 text-sm text-slate-400">
+              Weather data:
+              {" "}
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-300 hover:underline"
+              >
+                Open-Meteo
+              </a>
+              {" "}· CC BY 4.0
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-6">
             {sections.map((section) => (
               <div key={section.title}>
                 <div className="text-sm font-bold">
@@ -77,10 +80,9 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-slate-800 pt-6 text-xs text-slate-600">
-          Data Sources: IMD | MoES | Authorized Disaster Systems | Prototype Simulation
+          Forecast data is informational. Official disaster warnings must come from authorized government sources.
         </div>
       </div>
     </footer>
   );
 }
-

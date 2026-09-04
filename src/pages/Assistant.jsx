@@ -10,15 +10,17 @@ import {
 
 import Header from "../components/Header";
 import MobileNav from "../components/MobileNav";
+
 import { api } from "../lib/api";
+import { getWeatherByCity } from "../lib/weather";
 
 const suggestions = [
+  "What is the weather now?",
   "Is my area at risk?",
+  "Will it rain?",
+  "How strong is the wind?",
   "Explain my warning.",
-  "Where is the storm moving?",
   "Find nearby shelter.",
-  "What should I do?",
-  "Show emergency contacts.",
 ];
 
 export default function Assistant() {
@@ -30,7 +32,7 @@ export default function Assistant() {
     {
       sender: "ai",
       text:
-        "Hello. I am Prithvi AI. I can explain prototype weather warnings, local risk, preparedness and emergency resources.",
+        "Hello. I am Prithvi AI. Ask me about live weather, forecast risk, preparedness and emergency resources.",
     },
   ]);
 
@@ -41,23 +43,56 @@ export default function Assistant() {
 
     setMessages((current) => [
       ...current,
-      {
-        sender: "user",
-        text: message,
-      },
+      { sender: "user", text: message },
     ]);
 
     setInput("");
     setLoading(true);
 
     try {
-      const data = await api.assistant(message, location);
+      const lower = message.toLowerCase();
+
+      const weatherQuestion = [
+        "weather",
+        "temperature",
+        "rain",
+        "wind",
+        "risk",
+        "storm",
+        "forecast",
+        "humidity",
+      ].some((word) => lower.includes(word));
+
+      let responseText;
+
+      if (weatherQuestion) {
+        const weather = await getWeatherByCity(location);
+
+        responseText =
+          `${weather.location.displayName}: ` +
+          `${weather.current.condition}, ` +
+          `${weather.current.temperature_2m}°C, ` +
+          `feels like ${weather.current.apparent_temperature}°C. ` +
+          `Humidity ${weather.current.relative_humidity_2m}%. ` +
+          `Wind ${weather.current.wind_speed_10m} km/h, ` +
+          `gusts ${weather.current.wind_gusts_10m} km/h. ` +
+          `Rain chance ${weather.current.precipitationProbability ?? 0}%. ` +
+          `PRITHVIRAKSHAK forecast risk: ${weather.risk.level} - ${weather.risk.action}. ` +
+          `This is forecast information, not an official warning.`;
+      } else {
+        const data = await api.assistant(
+          message,
+          location
+        );
+
+        responseText = data.response;
+      }
 
       setMessages((current) => [
         ...current,
         {
           sender: "ai",
-          text: data.response,
+          text: responseText,
         },
       ]);
     } catch (error) {
@@ -65,9 +100,7 @@ export default function Assistant() {
         ...current,
         {
           sender: "ai",
-          text:
-            `Backend connection failed: ${error.message}. ` +
-            "Check that the FastAPI terminal is still running.",
+          text: `Unable to retrieve information: ${error.message}`,
         },
       ]);
     } finally {
@@ -92,48 +125,36 @@ export default function Assistant() {
               </h1>
 
               <p className="mt-1 text-sm text-slate-400">
-                Disaster Intelligence Assistant
+                Live Weather Intelligence Assistant
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
             <Wifi size={14} />
-            FASTAPI CONNECTED
+            LIVE WEATHER CONNECTED
           </div>
         </div>
 
-        <div className="mt-7 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-200">
-          Prototype assistant. Responses are generated from demonstration
-          disaster data and are not official emergency warnings.
-        </div>
+        <div className="mt-7 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4">
+          <MapPin size={18} className="text-cyan-300" />
 
-        <div className="mt-6">
-          <label className="text-xs font-bold text-slate-500">
-            LOCATION CONTEXT
-          </label>
-
-          <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4">
-            <MapPin size={18} className="text-cyan-300" />
-
-            <input
-              value={location}
-              onChange={(event) =>
-                setLocation(event.target.value)
-              }
-              className="w-full bg-transparent py-3 outline-none"
-              placeholder="Location"
-            />
-          </div>
+          <input
+            value={location}
+            onChange={(event) =>
+              setLocation(event.target.value)
+            }
+            className="w-full bg-transparent py-3 outline-none"
+            placeholder="Location"
+          />
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion}
-              disabled={loading}
               onClick={() => sendMessage(suggestion)}
-              className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:opacity-40"
+              className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/50"
             >
               {suggestion}
             </button>
@@ -144,32 +165,21 @@ export default function Assistant() {
           <div className="space-y-4">
             {messages.map((message, index) => (
               <div
-                key={`${message.sender}-${index}`}
+                key={index}
                 className={`max-w-[88%] rounded-2xl px-5 py-4 leading-6 ${
                   message.sender === "user"
-                    ? "ml-auto bg-cyan-400 font-medium text-slate-950"
+                    ? "ml-auto bg-cyan-400 text-slate-950"
                     : "bg-slate-950 text-slate-300"
                 }`}
               >
-                {message.sender === "ai" && (
-                  <div className="mb-2 flex items-center gap-2 text-xs font-bold text-cyan-300">
-                    <Bot size={14} />
-                    PRITHVI AI
-                  </div>
-                )}
-
                 {message.text}
               </div>
             ))}
 
             {loading && (
-              <div className="flex max-w-[88%] items-center gap-3 rounded-2xl bg-slate-950 px-5 py-4 text-slate-400">
-                <LoaderCircle
-                  size={18}
-                  className="animate-spin text-cyan-300"
-                />
-
-                Contacting PRITHVIRAKSHAK backend...
+              <div className="flex items-center gap-3 text-slate-400">
+                <LoaderCircle className="animate-spin text-cyan-300" />
+                Fetching live data...
               </div>
             )}
           </div>
@@ -191,25 +201,16 @@ export default function Assistant() {
           />
 
           <button
-            disabled={loading}
             onClick={() => sendMessage()}
-            className="flex items-center justify-center rounded-xl bg-cyan-400 px-6 font-bold text-slate-950 disabled:opacity-50"
+            className="rounded-xl bg-cyan-400 px-6 text-slate-950"
           >
-            <Send size={21} />
+            <Send />
           </button>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-          <ShieldAlert className="text-cyan-300" />
-
-          <div className="mt-4 font-bold">
-            Information Hierarchy
-          </div>
-
-          <div className="mt-2 text-sm leading-6 text-slate-400">
-            Official Warning → Observed Weather → Verified Platform Data →
-            Approved Guidance → AI Explanation
-          </div>
+        <div className="mt-8 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-xs text-amber-200">
+          <ShieldAlert className="mb-2" />
+          Live forecast data does not replace official IMD or government emergency warnings.
         </div>
       </main>
 
@@ -217,4 +218,3 @@ export default function Assistant() {
     </div>
   );
 }
-
